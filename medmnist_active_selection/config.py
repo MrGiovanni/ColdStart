@@ -30,7 +30,11 @@ class cold_start_config:
             self.backbone = args.backbone
         self.exp_name = self.arch + '-' + self.backbone
 
+        self.input_rows = args.input_rows
+        self.input_cols = args.input_cols
+        self.input_deps = args.input_deps
         self.batch_size = args.batch_size
+        self.lr = args.lr
         self.patience = args.patience
         self.init = args.init
         

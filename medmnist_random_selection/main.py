@@ -54,6 +54,10 @@ parser.add_argument('--backbone', dest='backbone', default='inceptionresnetv2', 
 parser.add_argument('--batch_size', dest='batch_size', default=128, type=int, help="batch size")
 parser.add_argument('--gpu', dest='gpu', default=None, type=str, help="gpu index")
 parser.add_argument('--init', dest='init', default='scratch', type=str, help="scratch | imagenet")
+parser.add_argument('--input_rows', dest='input_rows', default=48, type=int, help="input rows")
+parser.add_argument('--input_cols', dest='input_cols', default=48, type=int, help="input cols")
+parser.add_argument('--input_deps', dest='input_deps', default=3, type=int, help="input deps")
+parser.add_argument('--lr', dest='lr', default=0.1, type=float, help="learning rate")
 parser.add_argument('--partial', dest='partial', default=1.0, type=float, help="partial data %")
 parser.add_argument('--patience', dest='patience', default=5, type=int, help="patience")
 parser.add_argument('--run', dest='run', default=1, type=int, help="multiple trials")
@@ -81,19 +85,7 @@ assert args.task in ['mnistanatomy',
                      'organsmnist',
                     ]
 assert args.init in ['scratch', 'imagenet']
-assert args.act in ['uncertainty',
-                    'vaal',
-                    'consistency',
-                    'bald',
-                    'coreset',
-                    'margin',
-                    'easy',
-                    'hard',
-                    'ambiguous',
-                    'gt_easy',
-                    'gt_hard',
-                    'gt_ambiguous',
-                   ]
+assert args.act is None
 
 info = INFO[args.task]
 task = info['task']
