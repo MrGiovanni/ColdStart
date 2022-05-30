@@ -66,29 +66,29 @@ args = parser.parse_args()
 
 if args.gpu is not None:
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-assert args.task in ['mnistanatomy', 
-                     'mnist10', 
+assert args.task in ['mnistanatomy',
+                     'mnist10',
                      'bloodmnist',
                      'cifar10',
                      'cifar10lt',
-                     'dermamnist', 
+                     'dermamnist',
                      'octmnist',
-                     'pathmnist', 
+                     'pathmnist',
                      'retinamnist',
-                     'chestmnist', 
+                     'chestmnist',
                      'pneumoniamnist',
-                     'breastmnist', 
-                     'tissuemnist', 
+                     'breastmnist',
+                     'tissuemnist',
                      'organamnist',
-                     'organcmnist', 
+                     'organcmnist',
                      'organsmnist',
                     ]
 assert args.init in ['scratch', 'imagenet']
-assert args.act in ['uncertainty', 
-                    'vaal', 
-                    'consistency', 
-                    'bald', 
-                    'coreset', 
+assert args.act in ['uncertainty',
+                    'vaal',
+                    'consistency',
+                    'bald',
+                    'coreset',
                     'margin',
                     'easy',
                     'hard',
@@ -154,8 +154,16 @@ print(x_test.shape[0], "test samples")
 num_train = int(x_train.shape[0])
 num_partial = int(num_train * args.partial)
 assert num_partial >= config.nb_class
-sample_ind = np.load(os.path.join(config.idx_path, args.task, args.act+'_idx.npy'))
-sample_ind = sample_ind[:num_partial]
+active_ind = np.load(os.path.join(config.idx_path, args.task, args.act+'_idx.npy'))
+
+sample_ind = []
+num_per_class = math.floor(num_partial/config.nb_class)
+for c in range(config.nb_class - 1):
+    cindex = np.array([i for i in active_ind if y_train[i] == c])
+    sample_ind.extend(list(cindex[:min(len(cindex), num_per_class)]))
+cindex = np.array([i for i in active_ind if y_train[i] == config.nb_class - 1])
+sample_ind.extend(list(cindex[:min(len(cindex), (num_partial - num_per_class*(config.nb_class-1)))]))
+
 if check_unique_value(y_train[sample_ind], num_unique=config.nb_class) == False:
     print('[ERROR!] Cannot cover all classes.')
     raise
@@ -167,6 +175,7 @@ suffix = '-'+args.task+'-p'+str(args.partial)+'-a-'+str(args.act)
 
 model, callbacks = setup_classification_model(config, suffix=suffix)
             
+
 while config.batch_size > 1:
     try:
         history = model.fit_generator(generate_medmnist_pair(x_train[sample_ind],

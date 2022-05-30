@@ -1,0 +1,6 @@
+MNIST_NAME=( pathmnist )
+ACTIVE_ARRAY=( uncertainty bald consistency coreset margin vaal easy hard ambiguous gt_easy gt_hard gt_ambiguous )
+#ACTIVE_ARRAY=( uncertainty bald consistency coreset margin vaal )
+#ACTIVE_ARRAY=( easy hard ambiguous )
+
+for init in imagenet; do for run in {1..10}; do for task in "${MNIST_NAME[@]}"; do for act in "${ACTIVE_ARRAY[@]}"; do for partial in $(seq 1.00000 0.00005 1.00000) $(seq 0.00015 0.00005 0.00095) $(seq 0.00100 0.00050 0.00950) $(seq 0.01000 0.00500 0.09500) $(seq 0.10000 0.05000 0.95000); do while true; do if [ $(myjobs | wc -l) -lt 999 ]; then if [ ! -f logs/$task-$run-p$partial-$act.out ]; then sbatch --error=logs/$task-$run-p$partial-$act.out --output=logs/$task-$run-p$partial-$act.out hg.sh $run $task $partial $init $act; echo "logs/$task-$run-p$partial-$act.out"; break; else line="$(tail -n 1 logs/$task-$run-p$partial-$act.out)"; if [[ "$line" != *"AVERAGE"* ]] && [[ "$line" != *"reraise"* ]] && [[ "$line" != *"Sample larger than population"* ]]; then sbatch --error=logs/$task-$run-p$partial-$act.out --output=logs/$task-$run-p$partial-$act.out hg.sh $run $task $partial $init $act; echo "logs/$task-$run-p$partial-$act.out"; break; else break; fi; fi; fi; sleep 10s; done; done; done; done; done; done
