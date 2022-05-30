@@ -3,7 +3,7 @@ import shutil
 import csv
 import random
 
-class mnist_anatomy_config:
+class cold_start_config:
 
     input_rows = 48
     input_cols = 48

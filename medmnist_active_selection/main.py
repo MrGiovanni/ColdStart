@@ -12,22 +12,12 @@ for run in {2..10}; do for task in mnist10; do for partial in $(seq 0.00045 0.00
 python -W ignore main.py --gpu 3 --run 1 --task mnist10 --partial 0.0005
 '''
 
-import numpy as np
-import random
-from tqdm import tqdm
-from skimage.transform import resize
-import matplotlib.pyplot as plt
-import os
-import copy
-import shutil
-import keras
-import random
-import argparse
-import numpy as np
-import warnings
-warnings.filterwarnings('ignore')
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+import warnings
+warnings.filterwarnings('ignore')
+import medmnist
+print(f"MedMNIST v{medmnist.__version__} @ {medmnist.HOMEPAGE}")
 import keras
 print('keras = {}'.format(keras.__version__))
 import tensorflow as tf
@@ -36,30 +26,38 @@ try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 except:
     pass
+
+import random
+import copy
+import shutil
+import math
+import argparse
+import dataset_without_pytorch
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tqdm import tqdm
+from skimage.transform import resize
 from glob import glob
 from tqdm import tqdm
 from sklearn import metrics
-import matplotlib.pyplot as plt
 from utils import *
 from config import *
-
-import medmnist
 from medmnist import INFO, Evaluator
-import dataset_without_pytorch
-print(f"MedMNIST v{medmnist.__version__} @ {medmnist.HOMEPAGE}")
-
 
 parser = argparse.ArgumentParser(description='main')
-parser.add_argument('--act', dest='act', default=None, type=str, help="active selecting strategy")
-parser.add_argument('--arch', dest='arch', default='Linknet', type=str, help="architecture")
+
+parser.add_argument('--act', dest='act', default=None, type=str, help="active querying strategy")
+parser.add_argument('--arch', dest='arch', default='Linknet', type=str, help="Linknet | Unet")
 parser.add_argument('--backbone', dest='backbone', default='inceptionresnetv2', type=str, help="backbone")
-parser.add_argument('--init', dest='init', default='scratch', type=str, help="scratch | imagenet")
-parser.add_argument('--gpu', dest='gpu', default=None, type=str, help="gpu index")
-parser.add_argument('--run', dest='run', default=1, type=int, help="multiple trials")
 parser.add_argument('--batch_size', dest='batch_size', default=128, type=int, help="batch size")
-parser.add_argument('--patience', dest='patience', default=5, type=int, help="patience")
+parser.add_argument('--gpu', dest='gpu', default=None, type=str, help="gpu index")
+parser.add_argument('--init', dest='init', default='scratch', type=str, help="scratch | imagenet")
 parser.add_argument('--partial', dest='partial', default=1.0, type=float, help="partial data %")
+parser.add_argument('--patience', dest='patience', default=5, type=int, help="patience")
+parser.add_argument('--run', dest='run', default=1, type=int, help="multiple trials")
 parser.add_argument('--task', dest='task', default='mnistanatomy', type=str, help="mnistanatomy | mnist10")
+
 args = parser.parse_args()
 
 if args.gpu is not None:
@@ -67,7 +65,8 @@ if args.gpu is not None:
 assert args.task in ['mnistanatomy', 
                      'mnist10', 
                      'bloodmnist',
-                     'cifar10', 
+                     'cifar10',
+                     'cifar10lt',
                      'dermamnist', 
                      'octmnist',
                      'pathmnist', 
@@ -95,14 +94,12 @@ assert args.act in ['uncertainty',
                     'gt_ambiguous',
                    ]
 
-config = mnist_anatomy_config(args)
-
-# the data, split between train and test sets
 info = INFO[args.task]
 task = info['task']
+
+config = cold_start_config(args)
 config.n_channels = info['n_channels']
 config.nb_class = len(info['label'])
-
 config.display()
 
 DataClass = getattr(dataset_without_pytorch, info['python_class'])
@@ -145,7 +142,6 @@ for i in range(len(test_dataset)):
     y_test[i] = np.array(y)
 x_test = x_test.astype("float32") / 255.0
 print("x_test shape: {} | {} ~ {}".format(x_test.shape, np.min(x_test), np.max(x_test)))
-# (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
 
 print(x_train.shape[0], "train samples")
 print(x_val.shape[0], "val samples")
